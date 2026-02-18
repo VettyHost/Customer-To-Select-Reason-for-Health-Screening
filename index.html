@@ -87,11 +87,6 @@
             background: #d1d5db;
             border-radius: 10px;
         }
-        .reason-badge-active {
-            background-color: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #bfdbfe;
-        }
         .recommended-pulse {
             animation: pulse-blue 3s infinite;
         }
@@ -99,6 +94,14 @@
             0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.2); }
             70% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0); }
             100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+        /* Custom Select Styling */
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1rem;
         }
     </style>
     <script>
@@ -139,7 +142,7 @@
         const REASONS = ["Pre-employment", "Random", "Post-Accident", "Reasonable Suspicion", "Return to Duty", "Follow-up"];
 
         const REASON_MAPPING = {
-            "Pre-employment": ["4 Panel Drug", "5 Panel Drug", "10 Panel Drug", "MMR Vaccine", "QuantiFERON-TB Gold"],
+            "Pre-employment": ["4 Panel Drug", "5 Panel Drug", "10 Panel Drug"],
             "Random": ["5 Panel Drug", "7 Panel Drug"],
             "Reasonable Suspicion": ["Breath Alcohol Test (BAT)", "5 Panel Instant Drug", "10 Panel Instant Drug", "6 Panel Instant Drug"],
             "Post-Accident": ["Breath Alcohol Test (BAT)", "5 Panel Instant Drug", "10 Panel Instant Drug", "4 Panel Instant Drug"],
@@ -151,8 +154,8 @@
             return str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
         }
 
-        let searchInput, thcToggle;
-        let selectedReason = "Pre-employment"; 
+        let searchInput, thcToggle, reasonSelect;
+        let selectedReason = ""; // Default empty
         let selectedItems = new Set(); 
         let expandedPanelNames = new Set();
         let isNoMarijuana = false;
@@ -161,34 +164,21 @@
         document.addEventListener('DOMContentLoaded', () => {
             searchInput = document.getElementById('searchInput');
             thcToggle = document.getElementById('thcToggle');
+            reasonSelect = document.getElementById('reasonSelect');
 
             searchInput.addEventListener('input', filterDrugList);
             thcToggle.addEventListener('change', (e) => {
                 isNoMarijuana = e.target.checked;
                 filterDrugList();
             });
+            reasonSelect.addEventListener('change', (e) => {
+                selectedReason = e.target.value;
+                filterDrugList();
+            });
 
             initializeCanvas();
-            renderReasonSelector();
             filterDrugList();
         });
-
-        function renderReasonSelector() {
-            const container = document.getElementById('reasonContainer');
-            container.innerHTML = '';
-            REASONS.forEach(reason => {
-                const btn = document.createElement('button');
-                const isActive = selectedReason === reason;
-                btn.className = `px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${isActive ? 'reason-badge-active shadow-sm' : 'bg-white text-gray-400 border-gray-200 hover:border-blue-300'}`;
-                btn.innerText = reason;
-                btn.onclick = () => {
-                    selectedReason = (selectedReason === reason) ? null : reason;
-                    renderReasonSelector();
-                    filterDrugList();
-                };
-                container.appendChild(btn);
-            });
-        }
 
         function handleSelection(panelName, event) {
             if (event) event.stopPropagation();
@@ -211,7 +201,6 @@
             renderCurrentResults();
         }
 
-        // The core AND logic function
         function filterDrugList() {
             const rawQuery = searchInput.value.trim();
             const queryParts = rawQuery.split(/[,\s]+/).filter(p => p.length > 0).map(p => normalizeString(p));
@@ -224,13 +213,11 @@
 
                     const normalizedItems = panel.items ? panel.items.map(i => normalizeString(i)) : [];
                     
-                    // AND Condition 1: No Marijuana Toggle
                     if (isNoMarijuana && (category === 'drug' || category === 'instant')) {
                         const hasMJ = normalizedItems.some(item => item.includes('marijuana') || item.includes('thc'));
                         if (hasMJ) continue;
                     }
 
-                    // AND Condition 2: Search Query
                     if (queryParts.length > 0) {
                         const normalizedName = normalizeString(name);
                         const allPartsMatch = queryParts.every(part => {
@@ -260,24 +247,25 @@
             const container = document.getElementById('mainContentContainer');
             container.innerHTML = '';
 
-            // Handle Probable Section with strict AND matching
+            // Probable Section only shows if a specific reason is selected
             if (selectedReason && REASON_MAPPING[selectedReason]) {
                 const probables = REASON_MAPPING[selectedReason].filter(name => {
                     const data = MASTER_DATA[name];
                     if (!data) return false;
 
-                    // AND Condition 1: Respect No Marijuana toggle in probable list
                     if (isNoMarijuana && (data.category === 'drug' || data.category === 'instant')) {
                         const normalizedItems = data.items.map(i => normalizeString(i));
                         if (normalizedItems.some(item => item.includes('marijuana') || item.includes('thc'))) return false;
                     }
                     
-                    // AND Condition 2: Respect Search query in probable list
                     if (searchInput.value.trim() !== "") {
                         const normalizedName = normalizeString(name);
                         const q = normalizeString(searchInput.value.trim());
                         const normalizedItems = data.items ? data.items.map(i => normalizeString(i)) : [];
-                        return normalizedName.includes(q) || normalizedItems.some(item => item.includes(q));
+                        return normalizedName.includes(q) || normalizedItems.some(item => {
+                            if (isNoMarijuana && (item.includes('marijuana') || item.includes('thc'))) return false;
+                            return item.includes(q);
+                        });
                     }
                     return true;
                 });
@@ -335,6 +323,7 @@
             
             const itemRow = document.createElement('div');
             itemRow.className = `drug-item flex items-center justify-between p-4 ${isExpanded ? 'bg-blue-50/20' : ''}`;
+            
             itemRow.onclick = expandable ? () => toggleExpand(panelName) : (e) => handleSelection(panelName, e);
 
             itemRow.innerHTML = `
@@ -438,14 +427,30 @@
             </div>
         </div>
 
-        <!-- Reason for Test Selector -->
+        <!-- Compact Reason for Test Selector -->
         <div class="p-4 bg-gray-50 border-b border-gray-100 flex-shrink-0">
-            <div class="flex items-center space-x-1.5 mb-2">
-                <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
-                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reason for Test</span>
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-1.5">
+                    <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reason for Test</span>
+                </div>
+                <!-- Scope Indicator -->
+                <div class="flex items-center space-x-1 px-2 py-0.5 bg-blue-100 rounded text-blue-700 text-[8px] font-black uppercase tracking-tighter">
+                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                    <span>Applies to: Drug, Instant, BAT</span>
+                </div>
             </div>
-            <div id="reasonContainer" class="flex flex-wrap gap-2">
-                <!-- Buttons injected by JS -->
+            
+            <div class="relative w-full">
+                <select id="reasonSelect" class="custom-select w-full py-2 px-3 text-xs bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-primary-blue focus:border-primary-blue text-gray-700 font-semibold shadow-sm cursor-pointer outline-none">
+                    <option value="" selected>Select reason...</option>
+                    <option value="Pre-employment">Pre-employment</option>
+                    <option value="Random">Random</option>
+                    <option value="Post-Accident">Post-Accident</option>
+                    <option value="Reasonable Suspicion">Reasonable Suspicion</option>
+                    <option value="Return to Duty">Return to Duty</option>
+                    <option value="Follow-up">Follow-up</option>
+                </select>
             </div>
         </div>
 
