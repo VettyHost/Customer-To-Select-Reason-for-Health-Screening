@@ -3,105 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Health Screening Panel Selector</title>
-    <!-- Load Tailwind CSS -->
+    <title>Health Screening Flow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         :root {
-            --primary-blue: #2563eb;
-            --light-gray: #f9fafb;
-            --border-color: #e5e7eb;
+            --primary-blue: #3b82f6;
+            --border-color: #e2e8f0;
         }
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             min-height: 100vh;
-            padding-top: 1rem;
-            padding-bottom: 2rem;
         }
         .panel-container {
-            width: 100%;
-            max-width: 420px;
+            width: 440px;
+            height: 720px;
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             position: relative;
         }
-        .drug-item {
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .toggle-switch {
+            width: 32px;
+            height: 16px;
+            background-color: #cbd5e1;
+            border-radius: 999px;
+            position: relative;
             cursor: pointer;
-            transition: background-color 0.15s; 
+            transition: background-color 0.2s;
         }
-        .drug-item:hover {
-            background-color: #f8fafc;
-        }
-        #headerCanvas {
+        .toggle-switch::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            border-radius: 50%;
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.1;
-            z-index: -1;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
         }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #2563eb;
+        .toggle-active { background-color: #3b82f6; }
+        .toggle-active::after { transform: translateX(16px); }
+
+        .item-box {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            transition: background-color 0.1s;
         }
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #2563eb;
-        }
-        /* Accordion Structure */
-        .items-expand-area {
-            max-height: 0;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background-color: #f9fafb;
-            opacity: 0;
-        }
-        .items-expand-area.open {
-            max-height: 500px;
-            opacity: 1;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .chevron-icon {
-            transition: transform 0.3s ease;
-        }
-        .chevron-icon.rotated {
-            transform: rotate(180deg);
-        }
-        .custom-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 10px;
-        }
-        .recommended-pulse {
-            animation: pulse-blue 3s infinite;
-        }
-        @keyframes pulse-blue {
-            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.2); }
-            70% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-        }
-        /* Custom Select Styling */
+        .item-box:hover { background-color: #f1f5f9; }
+
         .custom-select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.5rem center;
-            background-size: 1rem;
+            background-size: 0.8rem;
+        }
+
+        .view-hidden { display: none !important; }
+        .radio-circle { border-radius: 50%; }
+        .checkbox-square { border-radius: 4px; }
+        
+        .field-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            text-align: right;
+            padding-right: 8px;
+            line-height: 1.1;
         }
     </style>
     <script>
@@ -109,380 +92,316 @@
             theme: {
                 extend: {
                     colors: {
-                        'primary-blue': '#2563eb',
-                        'light-gray': '#f9fafb',
+                        'vetty-blue': '#3b82f6',
+                        'vetty-gold-bg': '#fef9eb',
+                        'vetty-gold-text': '#856404',
+                        'field-bg': '#f2f4f8'
                     }
                 }
             }
         }
 
         const MASTER_DATA = {
-            "4 Panel Drug": { price: "$4.10", items: ["Amphetamines", "Cocaine", "Opiates", "Phencyclidine (PCP)"], order: 4, category: 'drug' },
-            "5 Panel Drug": { price: "$4.20", items: ["Amphetamines (AMP)", "Cocaine (COC)", "Marijuana (THC)", "Opiates (OPI)", "Phencyclidine (PCP)"], order: 5, category: 'drug' },
-            "6 Panel Drug": { price: "$4.15", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Opiates", "Phencyclidine (PCP)"], order: 6, category: 'drug' },
-            "7 Panel Drug": { price: "$4.20", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Opiates", "Phencyclidine (PCP)", "Marijuana"], order: 7, category: 'drug' },
-            "8 Panel Drug": { price: "$4.25", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Methadone", "Methaqualone", "Opiates", "Phencyclidine (PCP)"], order: 8, category: 'drug' },
-            "9 Panel Drug": { price: "$4.20", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Methadone", "Methaqualone", "Opiates", "Phencyclidine (PCP)", "Propoxyphene"], order: 9, category: 'drug' },
-            "10 Panel Drug": { price: "$4.20", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Marijuana", "Methadone", "Methaqualone", "Opiates", "Phencyclidine (PCP)", "Propoxyphene"], order: 10, category: 'drug' },
-            "12 Panel Drug": { price: "$4.50", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Marijuana", "Methadone", "Methaqualone", "Opiates", "Phencyclidine", "Propoxyphene", "MDMA", "Oxycodone"], order: 12, category: 'drug' },
-            "4 Panel Instant Drug": { price: "$ 6.50", items: ["Amphetamines", "Cocaine", "Opiates", "Phencyclidine"], order: 54, category: 'instant' },
-            "5 Panel Instant Drug": { price: "$ 6.82", items: ["Amphetamines", "Cocaine", "Marijuana", "Opiates", "Phencyclidine"], order: 55, category: 'instant' },
-            "6 Panel Instant Drug": { price: "$ 6.70", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Opiates", "Phencyclidine"], order: 56, category: 'instant' },
-            "10 Panel Instant Drug": { price: "$ 6.82", items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Marijuana", "Methadone", "Methaqualone", "Opiates", "Phencyclidine", "Propoxyphene"], order: 100, category: 'instant' },
-            "Breath Alcohol Test (BAT)": { price: "$ 12.50", order: 150, category: 'alcohol', items: ["Alcohol Concentration"] },
-            "Blood Draw Collection": { price: "$ 6.93", order: 200, category: 'titers' },
-            "Hep B Surface Antibody (HBsAb)": { price: "$ 6.93", order: 201, category: 'titers' },
-            "MMR Titer": { price: "$ 6.93", order: 204, category: 'titers' },
-            "QuantiFERON-TB Gold": { price: "$ 6.93", order: 205, category: 'titers' },
-            "Flu Vaccine": { price: "$ 7.04", order: 300, category: 'vaccines' },
-            "MMR Vaccine": { price: "$ 7.04", order: 301, category: 'vaccines' },
-            "TDAP Vaccine": { price: "$ 7.04", order: 302, category: 'vaccines' }
+            "Drugs (4)": [
+                { name: "5 Panel Drug", price: 4.20, items: ["Amphetamines", "Cocaine", "Marijuana", "Opiates", "PCP"], type: 'radio' },
+                { name: "7 Panel Drug", price: 4.20, items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Opiates", "PCP", "Marijuana"], type: 'radio' },
+                { name: "10 Panel Drug", price: 4.20, items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Marijuana", "Methadone", "Methaqualone", "Opiates", "PCP", "Propoxyphene"], type: 'radio' },
+                { name: "Drug 20sep", price: 4.20, items: ["Custom substance"], type: 'radio' }
+            ],
+            "Instant Drugs (2)": [
+                { name: "5 Panel Instant Drug", price: 6.82, items: ["Amphetamines", "Cocaine", "Marijuana", "Opiates", "PCP"], type: 'radio' },
+                { name: "10 Panel Instant Drug", price: 6.82, items: ["Amphetamines", "Barbiturates", "Benzodiazepines", "Cocaine", "Marijuana", "Methadone", "Opiates"], type: 'radio' }
+            ],
+            "Titers (7)": [
+                { name: "Blood Draw Collection", price: 6.93, type: 'checkbox' },
+                { name: "Hep B Surface Antibody (HBsAb)", price: 6.93, type: 'checkbox' },
+                { name: "Hep B Surface Antigen (HBsAG)", price: 6.93, type: 'checkbox' },
+                { name: "Hepatitis B Surface Antibody, Qualitative_DNU", price: 6.93, type: 'checkbox' },
+                { name: "MMR Titer", price: 6.93, type: 'checkbox' },
+                { name: "QuantiFERON-TB Gold", price: 6.93, type: 'checkbox' },
+                { name: "Titer 24nov", price: 6.93, type: 'checkbox' }
+            ],
+            "Vaccines (5)": [
+                { name: "Flu Vaccine", price: 7.04, type: 'checkbox' },
+                { name: "MMR Vaccine", price: 7.04, type: 'checkbox' },
+                { name: "TDAP Vaccine", price: 7.04, type: 'checkbox' },
+                { name: "Hepatitis A Vaccine", price: 7.04, type: 'checkbox' },
+                { name: "Varicella Vaccine", price: 7.04, type: 'checkbox' }
+            ]
         };
 
-        const REASONS = ["Pre-employment", "Random", "Post-Accident", "Reasonable Suspicion", "Return to Duty", "Follow-up"];
-
-        const REASON_MAPPING = {
-            "Pre-employment": ["4 Panel Drug", "5 Panel Drug", "10 Panel Drug"],
-            "Random": ["5 Panel Drug", "7 Panel Drug"],
-            "Reasonable Suspicion": ["Breath Alcohol Test (BAT)", "5 Panel Instant Drug", "10 Panel Instant Drug", "6 Panel Instant Drug"],
-            "Post-Accident": ["Breath Alcohol Test (BAT)", "5 Panel Instant Drug", "10 Panel Instant Drug", "4 Panel Instant Drug"],
-            "Return to Duty": ["10 Panel Drug", "Breath Alcohol Test (BAT)", "12 Panel Drug"],
-            "Follow-up": ["10 Panel Drug", "Breath Alcohol Test (BAT)"]
-        };
-
-        function normalizeString(str) {
-            return str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        }
-
-        let searchInput, thcToggle, reasonSelect;
-        let selectedReason = ""; // Default empty
-        let selectedItems = new Set(); 
-        let expandedPanelNames = new Set();
+        let selectedItems = new Set();
         let isNoMarijuana = false;
-        let lastResults = { drugs: [], instants: [], alcohols: [], titers: [], vaccines: [] };
+        let searchQuery = "";
+        let clinicDropdownOpen = false;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            searchInput = document.getElementById('searchInput');
-            thcToggle = document.getElementById('thcToggle');
-            reasonSelect = document.getElementById('reasonSelect');
-
-            searchInput.addEventListener('input', filterDrugList);
-            thcToggle.addEventListener('change', (e) => {
-                isNoMarijuana = e.target.checked;
-                filterDrugList();
-            });
-            reasonSelect.addEventListener('change', (e) => {
-                selectedReason = e.target.value;
-                filterDrugList();
-            });
-
-            initializeCanvas();
-            filterDrugList();
-        });
-
-        function handleSelection(panelName, event) {
-            if (event) event.stopPropagation();
-            if (selectedItems.has(panelName)) {
-                selectedItems.delete(panelName);
-            } else {
-                selectedItems.add(panelName);
-            }
-            updateFooter();
-            renderCurrentResults();
-        }
-
-        function toggleExpand(panelName, event) {
-            if (event) event.stopPropagation();
-            if (expandedPanelNames.has(panelName)) {
-                expandedPanelNames.delete(panelName);
-            } else {
-                expandedPanelNames.add(panelName);
-            }
-            renderCurrentResults();
-        }
-
-        function filterDrugList() {
-            const rawQuery = searchInput.value.trim();
-            const queryParts = rawQuery.split(/[,\s]+/).filter(p => p.length > 0).map(p => normalizeString(p));
-
-            const processSection = (category) => {
-                const out = [];
-                for (const name in MASTER_DATA) {
-                    const panel = MASTER_DATA[name];
-                    if (panel.category !== category) continue;
-
-                    const normalizedItems = panel.items ? panel.items.map(i => normalizeString(i)) : [];
-                    
-                    if (isNoMarijuana && (category === 'drug' || category === 'instant')) {
-                        const hasMJ = normalizedItems.some(item => item.includes('marijuana') || item.includes('thc'));
-                        if (hasMJ) continue;
-                    }
-
-                    if (queryParts.length > 0) {
-                        const normalizedName = normalizeString(name);
-                        const allPartsMatch = queryParts.every(part => {
-                            return normalizedName.includes(part) || normalizedItems.some(item => item.includes(part));
-                        });
-                        if (!allPartsMatch) continue;
-                    }
-
-                    out.push(name);
+        function toggleItem(name, type) {
+            if (type === 'radio') {
+                for (let cat in MASTER_DATA) {
+                    MASTER_DATA[cat].forEach(item => {
+                        if (item.type === 'radio') selectedItems.delete(item.name);
+                    });
                 }
-                return out.sort((a, b) => MASTER_DATA[a].order - MASTER_DATA[b].order);
-            };
-
-            lastResults = {
-                drugs: processSection('drug'),
-                instants: processSection('instant'),
-                alcohols: processSection('alcohol'),
-                titers: processSection('titers'),
-                vaccines: processSection('vaccines')
-            };
-
-            renderCurrentResults();
+                selectedItems.add(name);
+            } else {
+                if (selectedItems.has(name)) selectedItems.delete(name);
+                else selectedItems.add(name);
+            }
+            renderStep1();
+            updateTotals();
         }
 
-        function renderCurrentResults() {
-            const { drugs, instants, alcohols, titers, vaccines } = lastResults;
-            const container = document.getElementById('mainContentContainer');
+        function toggleNoMarijuana() {
+            isNoMarijuana = !isNoMarijuana;
+            document.getElementById('mjToggle').classList.toggle('toggle-active');
+            renderStep1();
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.toLowerCase();
+            renderStep1();
+        }
+
+        function updateTotals() {
+            let total = 0;
+            selectedItems.forEach(name => {
+                for (let cat in MASTER_DATA) {
+                    const found = MASTER_DATA[cat].find(i => i.name === name);
+                    if (found) total += found.price;
+                }
+            });
+            document.querySelectorAll('.total-package-val').forEach(el => el.innerText = total.toFixed(2));
+            document.getElementById('step1NextBtn').disabled = selectedItems.size === 0;
+        }
+
+        function renderStep1() {
+            const container = document.getElementById('step1Content');
             container.innerHTML = '';
 
-            // Probable Section only shows if a specific reason is selected
-            if (selectedReason && REASON_MAPPING[selectedReason]) {
-                const probables = REASON_MAPPING[selectedReason].filter(name => {
-                    const data = MASTER_DATA[name];
-                    if (!data) return false;
-
-                    if (isNoMarijuana && (data.category === 'drug' || data.category === 'instant')) {
-                        const normalizedItems = data.items.map(i => normalizeString(i));
-                        if (normalizedItems.some(item => item.includes('marijuana') || item.includes('thc'))) return false;
+            for (let category in MASTER_DATA) {
+                const items = MASTER_DATA[category].filter(item => {
+                    const matchesSearch = item.name.toLowerCase().includes(searchQuery);
+                    let matchesMJ = true;
+                    if (isNoMarijuana && item.items) {
+                        matchesMJ = !item.items.some(sub => sub.toLowerCase().includes('marijuana') || sub.toLowerCase().includes('thc'));
                     }
-                    
-                    if (searchInput.value.trim() !== "") {
-                        const normalizedName = normalizeString(name);
-                        const q = normalizeString(searchInput.value.trim());
-                        const normalizedItems = data.items ? data.items.map(i => normalizeString(i)) : [];
-                        return normalizedName.includes(q) || normalizedItems.some(item => {
-                            if (isNoMarijuana && (item.includes('marijuana') || item.includes('thc'))) return false;
-                            return item.includes(q);
-                        });
-                    }
-                    return true;
+                    return matchesSearch && matchesMJ;
                 });
 
-                if (probables.length > 0) {
-                    const h = document.createElement('div');
-                    h.className = 'p-4 pt-4 bg-white sticky top-0 z-20 border-b border-blue-50';
-                    h.innerHTML = `<h2 class="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center">
-                        <svg class="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                        Probable for ${selectedReason} (${probables.length})
-                    </h2>`;
-                    container.appendChild(h);
+                if (items.length === 0) continue;
 
-                    const l = document.createElement('div');
-                    l.className = 'bg-blue-50/5 divide-y divide-blue-50 mb-6';
-                    probables.forEach(name => l.appendChild(createItemNode(name, MASTER_DATA[name], true)));
-                    container.appendChild(l);
-                }
-            }
+                const catHeader = document.createElement('div');
+                catHeader.className = 'px-4 py-2 mt-1';
+                catHeader.innerHTML = `<h2 class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">${category}</h2>`;
+                container.appendChild(catHeader);
 
-            const categories = [
-                { title: `Drug (${drugs.length})`, names: drugs, cat: 'drug' },
-                { title: `Instant Drugs (${instants.length})`, names: instants, cat: 'instant' },
-                { title: `Alcohol Tests (${alcohols.length})`, names: alcohols, cat: 'alcohol' },
-                { title: `Titers (${titers.length})`, names: titers, cat: 'titers' },
-                { title: `Vaccines (${vaccines.length})`, names: vaccines, cat: 'vaccines' }
-            ];
-
-            categories.forEach(sec => {
-                if (sec.names.length === 0 && searchInput.value === "") return;
-                
-                const header = document.createElement('div');
-                header.className = 'p-4 pt-2 bg-white sticky top-0 z-10 border-b border-gray-50';
-                header.innerHTML = `<h2 class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">${sec.title}</h2>`;
-                container.appendChild(header);
-
-                const list = document.createElement('div');
-                list.className = 'bg-white divide-y divide-gray-100 mb-2';
-                sec.names.forEach(name => {
-                    const expandable = (sec.cat === 'drug' || sec.cat === 'instant' || sec.cat === 'alcohol');
-                    list.appendChild(createItemNode(name, MASTER_DATA[name], expandable));
+                items.forEach(item => {
+                    const isSelected = selectedItems.has(item.name);
+                    const isRadio = item.type === 'radio';
+                    const div = document.createElement('div');
+                    div.className = 'px-4 py-0.5';
+                    div.innerHTML = `
+                        <div class="item-box flex items-center justify-between p-2.5 cursor-pointer" onclick="toggleItem('${item.name}', '${item.type}')">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-4 h-4 border ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-200'} ${isRadio ? 'radio-circle' : 'checkbox-square'} flex items-center justify-center transition-colors">
+                                    ${isSelected ? '<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                </div>
+                                <span class="text-[11px] font-semibold text-slate-700">${item.name}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] font-bold text-blue-600">$ ${item.price.toFixed(2)}</span>
+                                <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(div);
                 });
-                container.appendChild(list);
-            });
-            updateFooter();
-        }
-
-        function createItemNode(panelName, data, expandable) {
-            const isSelected = selectedItems.has(panelName);
-            const isExpanded = expandedPanelNames.has(panelName);
-            const isProbable = selectedReason && REASON_MAPPING[selectedReason]?.includes(panelName);
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = 'flex flex-col border-b border-gray-100 last:border-b-0';
-            
-            const itemRow = document.createElement('div');
-            itemRow.className = `drug-item flex items-center justify-between p-4 ${isExpanded ? 'bg-blue-50/20' : ''}`;
-            
-            itemRow.onclick = expandable ? () => toggleExpand(panelName) : (e) => handleSelection(panelName, e);
-
-            itemRow.innerHTML = `
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="handleSelection('${panelName}', event)">
-                    <div class="w-4 h-4 rounded-[4px] border ${isSelected ? 'border-primary-blue bg-primary-blue flex items-center justify-center' : 'border-gray-300 bg-white'} transition-colors ${isProbable && !isSelected ? 'recommended-pulse' : ''}">
-                        ${isSelected ? '<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>' : ''}
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs font-semibold text-gray-700">${panelName}</span>
-                        ${isProbable ? `<span class="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Probable Check</span>` : ''}
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <span class="text-[11px] text-primary-blue font-bold">${data.price}</span>
-                    ${expandable ? `
-                        <svg class="chevron-icon w-4 h-4 text-primary-blue ${isExpanded ? 'rotated' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    ` : '<div class="w-4 h-4"></div>'}
-                </div>
-            `;
-
-            const expandArea = document.createElement('div');
-            expandArea.className = `items-expand-area ${isExpanded ? 'open' : ''}`;
-            const itemsGrid = document.createElement('div');
-            itemsGrid.className = 'grid grid-cols-2 gap-x-4 gap-y-2 px-11 py-2';
-            
-            if (data.items) {
-                data.items.forEach(substance => {
-                    const normSub = normalizeString(substance);
-                    if (isNoMarijuana && (normSub.includes('marijuana') || normSub.includes('thc'))) return;
-                    itemsGrid.innerHTML += `<div class="text-[10px] text-gray-500 flex items-center space-x-2"><span class="w-1 h-1 rounded-full bg-blue-300"></span><span class="truncate">${substance}</span></div>`;
-                });
-            }
-            
-            expandArea.appendChild(itemsGrid);
-            wrapper.appendChild(itemRow);
-            wrapper.appendChild(expandArea);
-            
-            return wrapper;
-        }
-
-        function updateFooter() {
-            const footer = document.getElementById('footerSummary');
-            const count = selectedItems.size;
-            const btn = document.getElementById('confirmBtn');
-            if (count > 0) {
-                footer.classList.remove('hidden');
-                btn.innerText = `Confirm ${count} Test${count > 1 ? 's' : ''} ${selectedReason ? 'for ' + selectedReason : ''}`;
-            } else {
-                footer.classList.add('hidden');
             }
         }
 
-        function initializeCanvas() {
-            const canvas = document.getElementById('headerCanvas');
-            const ctx = canvas.getContext('2d');
-            let dots = [];
-            function resize() {
-                const header = document.querySelector('.header-box');
-                if(!header) return;
-                canvas.width = header.clientWidth;
-                canvas.height = header.clientHeight;
-                dots = Array.from({length: 10}, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - 0.5) * 0.1, vy: (Math.random() - 0.5) * 0.1 }));
-            }
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = 'rgba(37, 99, 235, 0.2)';
-                dots.forEach(d => {
-                    d.x += d.vx; d.y += d.vy;
-                    if(d.x < 0 || d.x > canvas.width) d.vx *= -1;
-                    if(d.y < 0 || d.y > canvas.height) d.vy *= -1;
-                    ctx.beginPath(); ctx.arc(d.x, d.y, 1, 0, Math.PI*2); ctx.fill();
-                });
-                requestAnimationFrame(animate);
-            }
-            resize();
-            window.addEventListener('resize', resize);
-            animate();
+        function toggleClinicDropdown() {
+            clinicDropdownOpen = !clinicDropdownOpen;
+            document.getElementById('clinicDropdownMenu').classList.toggle('hidden');
         }
+
+        function navigateToStep2() {
+            document.getElementById('step1').classList.add('view-hidden');
+            document.getElementById('step2').classList.remove('view-hidden');
+            document.getElementById('addedChecksBox').innerText = Array.from(selectedItems).join(', ');
+        }
+
+        function goBack() {
+            document.getElementById('step2').classList.add('view-hidden');
+            document.getElementById('step1').classList.remove('view-hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', renderStep1);
     </script>
 </head>
 <body>
-    <div class="panel-container h-[700px]">
-        <!-- Header -->
-        <header class="header-box relative p-4 border-b border-gray-100 flex-shrink-0">
-            <canvas id="headerCanvas"></canvas> 
-            <div class="relative flex justify-between items-center z-10">
-                <h1 class="text-sm font-black text-gray-900 uppercase tracking-tighter">Order Placement</h1>
-                <button class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-        </header>
+    <div class="panel-container">
+        
+        <!-- STEP 1 -->
+        <div id="step1" class="flex flex-col h-full bg-white">
+            <header class="p-4 flex justify-between items-center bg-white border-b border-slate-100">
+                <h1 class="text-sm font-bold text-slate-800">Request Checks</h1>
+                <button class="text-blue-600 text-[10px] font-bold">✕ Close</button>
+            </header>
 
-        <!-- Tabs -->
-        <div class="flex border-b border-gray-100 bg-white flex-shrink-0">
-            <div class="flex-1 p-3 text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Background</div>
-            <div class="flex-1 p-3 text-center text-primary-blue text-[10px] font-black uppercase tracking-widest border-b-2 border-primary-blue">
-                Health Screening
+            <div class="flex border-b border-slate-100">
+                <div class="flex-1 py-2 text-center text-[9px] font-bold text-slate-400 uppercase">Background Screening</div>
+                <div class="flex-1 py-2 text-center text-[9px] font-bold text-blue-600 border-b-2 border-blue-600 uppercase">Health Screening</div>
+                <div class="flex-1 py-2 text-center text-[9px] font-bold text-slate-400 uppercase">Mask Shipping</div>
             </div>
-        </div>
 
-        <!-- Compact Reason for Test Selector -->
-        <div class="p-4 bg-gray-50 border-b border-gray-100 flex-shrink-0">
-            <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center space-x-1.5">
-                    <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reason for Test</span>
-                </div>
-                <!-- Scope Indicator -->
-                <div class="flex items-center space-x-1 px-2 py-0.5 bg-blue-100 rounded text-blue-700 text-[8px] font-black uppercase tracking-tighter">
-                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                    <span>Applies to: Drug, Instant, BAT</span>
-                </div>
-            </div>
-            
-            <div class="relative w-full">
-                <select id="reasonSelect" class="custom-select w-full py-2 px-3 text-xs bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-primary-blue focus:border-primary-blue text-gray-700 font-semibold shadow-sm cursor-pointer outline-none">
-                    <option value="" selected>Select reason...</option>
-                    <option value="Pre-employment">Pre-employment</option>
-                    <option value="Random">Random</option>
-                    <option value="Post-Accident">Post-Accident</option>
-                    <option value="Reasonable Suspicion">Reasonable Suspicion</option>
-                    <option value="Return to Duty">Return to Duty</option>
-                    <option value="Follow-up">Follow-up</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Filters Section -->
-        <div class="p-4 pb-2 bg-white space-y-3 flex-shrink-0">
-            <div class="flex items-center justify-end space-x-2">
-                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">No Marijuana</span>
-                <div class="relative inline-block w-8 align-middle select-none">
-                    <input type="checkbox" id="thcToggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 border-gray-300 appearance-none cursor-pointer outline-none transition-all duration-200 checked:right-0 checked:border-primary-blue"/>
-                    <label for="thcToggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-200 cursor-pointer"></label>
+            <div class="p-4 space-y-2">
+                <input type="text" oninput="handleSearch(this.value)" placeholder="Search health checks (e.g., Amphetamines, PCP)" 
+                       class="w-full py-2 px-3 text-[10px] bg-white border border-slate-200 rounded-md focus:outline-none">
+                <div class="flex items-center justify-end space-x-2">
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">No Marijuana</span>
+                    <div id="mjToggle" onclick="toggleNoMarijuana()" class="toggle-switch"></div>
                 </div>
             </div>
 
-            <div class="relative">
-                <input type="text" id="searchInput" placeholder="Search drug, alcohol, or vaccine..." 
-                       class="w-full py-2 pl-3 pr-8 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary-blue focus:border-primary-blue text-gray-700 placeholder:text-gray-300">
-                <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <svg class="h-3.5 w-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <div id="step1Content" class="flex-grow overflow-y-auto custom-scroll px-0 bg-white"></div>
+
+            <footer class="p-4 border-t border-slate-100 bg-white">
+                <div class="flex justify-end items-center mb-1">
+                    <span class="text-[11px] font-bold text-slate-800 mr-1">Total Package*:</span>
+                    <span class="text-[11px] font-bold text-green-600">$<span class="total-package-val">0.00</span></span>
+                </div>
+                <p class="text-[7px] text-slate-400 italic mb-3 text-right uppercase tracking-tighter">*Package Cost Does Not Include Fees & Taxes.</p>
+                <div class="flex justify-end space-x-2">
+                    <button class="px-4 py-1.5 border border-blue-600 rounded-md text-blue-600 text-[9px] font-bold uppercase">✕ Cancel</button>
+                    <button id="step1NextBtn" onclick="navigateToStep2()" disabled class="px-6 py-1.5 bg-blue-600 disabled:bg-blue-300 text-white rounded-md text-[9px] font-bold uppercase flex items-center transition-colors">
+                        Next <span class="ml-1.5 font-bold">✓</span>
+                    </button>
+                </div>
+            </footer>
+        </div>
+
+        <!-- STEP 2: ENTER CLINIC INFORMATION -->
+        <div id="step2" class="view-hidden flex flex-col h-full bg-white">
+            <header class="p-4 pb-2 flex items-center">
+                <h1 class="text-[14px] font-bold text-blue-600">Enter Clinic Information</h1>
+            </header>
+
+            <!-- MINIMAL CONTENT AREA -->
+            <div class="flex-grow overflow-y-auto custom-scroll p-4">
+                <div class="bg-vetty-gold-bg border border-[#fbeed5] rounded-lg p-2.5 flex space-x-3 items-start mb-4">
+                    <div class="bg-yellow-600 text-white p-0.5 rounded-sm flex-shrink-0">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-[10px] font-bold text-vetty-gold-text uppercase tracking-tight">Added Health Screening Checks</h2>
+                        <p id="addedChecksBox" class="text-[9px] text-vetty-gold-text mt-0.5 font-medium leading-tight">10 Panel Drug</p>
+                    </div>
+                </div>
+
+                <!-- Form Section - SIDE BY SIDE FIELDS -->
+                <div class="space-y-3">
+                    <!-- Reason for Test - DEFAULTED TO EMPTY -->
+                    <div class="grid grid-cols-12 items-center gap-x-2">
+                        <div class="col-span-4">
+                            <label class="field-label">Reason For Test:</label>
+                        </div>
+                        <div class="col-span-8">
+                            <select class="custom-select w-full py-1.5 px-2.5 text-[10px] bg-field-bg border border-slate-200 rounded-md text-slate-700 font-medium">
+                                <option value="" selected disabled>Select reason...</option>
+                                <option>Pre-Employment</option>
+                                <option>Post Accident</option>
+                                <option>Random</option>
+                                <option>Reasonable Suspicion</option>
+                                <option>Return to Duty</option>
+                                <option>Follow-Up</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Clinic Preference -->
+                    <div class="grid grid-cols-12 items-center gap-x-2">
+                        <div class="col-span-4">
+                            <label class="field-label">Clinic Preference: <span class="text-red-500 font-black">*</span></label>
+                        </div>
+                        <div class="col-span-8 relative">
+                            <div class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[7px] font-bold">i</div>
+                            <div onclick="toggleClinicDropdown()" class="custom-select w-full py-1.5 px-2.5 text-[10px] bg-field-bg border border-slate-200 rounded-md text-slate-500 font-medium truncate cursor-pointer">
+                                Preferred Clinics & More Options,
+                            </div>
+                            <div id="clinicDropdownMenu" class="hidden absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 p-2 space-y-1.5">
+                                <div class="flex items-center space-x-2 px-1 hover:bg-slate-50 cursor-pointer">
+                                    <input type="checkbox" class="w-3 h-3 border-slate-300">
+                                    <span class="text-[9px] text-slate-600 font-medium">Preferred Clinics</span>
+                                </div>
+                                <div class="flex items-center space-x-2 px-1 hover:bg-slate-50 cursor-pointer">
+                                    <input type="checkbox" checked class="w-3 h-3 border-slate-300">
+                                    <span class="text-[9px] text-slate-600 font-medium">Preferred Clinics & More Options</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ZIP Code -->
+                    <div class="grid grid-cols-12 items-center gap-x-2">
+                        <div class="col-span-4">
+                            <label class="field-label">Enter ZIP Code:</label>
+                        </div>
+                        <div class="col-span-8">
+                            <input type="text" placeholder="Enter zipcode" class="w-full py-1.5 px-2.5 text-[10px] bg-field-bg border border-slate-200 rounded-md focus:outline-none placeholder:text-slate-400">
+                        </div>
+                    </div>
+
+                    <!-- Radius -->
+                    <div class="grid grid-cols-12 items-center gap-x-2">
+                        <div class="col-span-4">
+                            <label class="field-label">Radius:</label>
+                        </div>
+                        <div class="col-span-8 flex space-x-2">
+                            <select class="custom-select flex-1 py-1.5 px-2.5 text-[10px] bg-field-bg border border-slate-200 rounded-md text-slate-700"><option>50</option></select>
+                            <select class="custom-select flex-1 py-1.5 px-2.5 text-[10px] bg-field-bg border border-slate-200 rounded-md text-slate-700"><option>Miles</option></select>
+                        </div>
+                    </div>
+
+                    <!-- Donor Pass -->
+                    <div class="grid grid-cols-12 items-center gap-x-2">
+                        <div class="col-span-4">
+                            <label class="field-label leading-none">Donor Pass Duration: <span class="text-red-500 font-black">*</span></label>
+                        </div>
+                        <div class="col-span-8 flex space-x-2">
+                            <select class="custom-select flex-1 py-1.5 px-2.5 text-[10px] bg-field-bg border border-slate-200 rounded-md text-slate-700"><option>5</option></select>
+                            <select class="custom-select flex-1 py-1.5 px-2.5 text-[10px] bg-field-bg border border-slate-200 rounded-md text-slate-700"><option>Days</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons Area -->
+                <div class="flex justify-center space-x-2.5 pt-6">
+                    <button onclick="goBack()" class="w-24 py-1.5 border border-blue-600 text-blue-600 text-[10px] font-bold uppercase rounded-md flex items-center justify-center">
+                        <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        Back
+                    </button>
+                    <button class="w-44 py-1.5 bg-[#93c5fd] text-white text-[9px] font-bold uppercase rounded-md flex items-center justify-center cursor-not-allowed">
+                        <svg class="w-3 h-3 mr-1.5 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        Check Availability
+                    </button>
                 </div>
             </div>
-        </div>
 
-        <!-- Main List Area -->
-        <div id="mainContentContainer" class="flex-grow overflow-y-auto custom-scroll">
-            <!-- Dynamic Content -->
-        </div>
-
-        <!-- Footer Summary -->
-        <div id="footerSummary" class="p-4 bg-white border-t border-gray-100 hidden flex-shrink-0 shadow-2xl">
-            <button id="confirmBtn" class="w-full py-3 bg-primary-blue text-white text-[11px] font-bold uppercase tracking-widest rounded-lg shadow-lg hover:bg-blue-700 transition-all transform active:scale-[0.98]">
-                Confirm Order
-            </button>
+            <!-- Footer -->
+            <footer class="p-4 border-t border-slate-100 bg-white mt-auto">
+                <div class="flex justify-end items-center mb-0.5">
+                    <span class="text-[11px] font-bold text-slate-800 mr-1">Total Package*:</span>
+                    <span class="text-[11px] font-bold text-green-600">$<span class="total-package-val">0.00</span></span>
+                </div>
+                <p class="text-[7px] text-slate-400 italic mb-3 text-right uppercase tracking-tighter leading-tight">*Package Cost Does Not Include Health Screening Fees.</p>
+                <div class="flex justify-end space-x-2">
+                    <button class="px-5 py-1.5 border border-blue-600 rounded-md text-blue-600 text-[9px] font-bold uppercase">✕ Cancel</button>
+                    <button class="px-7 py-1.5 bg-blue-600 text-white rounded-md text-[9px] font-bold uppercase shadow-sm flex items-center">
+                        <span class="mr-1 font-bold">✓</span> Next
+                    </button>
+                </div>
+            </footer>
         </div>
     </div>
 </body>
